@@ -1,14 +1,13 @@
-from flask import Blueprint, request
 import requests
 from config import CLIENT_ID, CLIENT_SECRET, REDIRECT_URI
 
-bp = Blueprint('oauth', __name__)
+AUTH_SERVER = "https://kauth.kakao.com%s"
+API_SERVER = "https://kapi.kakao.com%s"
 
 
-@bp.route("/oauth")
-def oauth():
+def authorize(code):
 	return requests.post(
-		url="https://kauth.kakao.com/oauth/token", 
+		url=AUTH_SERVER % "/oauth/token", 
 		headers={
 			"Content-Type": "application/x-www-form-urlencoded",
 			"Cache-Control": "no-cache",
@@ -18,15 +17,14 @@ def oauth():
 			"client_id": CLIENT_ID,
 			"client_secret": CLIENT_SECRET,
 			"redirect_uri": REDIRECT_URI,
-			"code": str(request.args.get('code')),
+			"code": code,
 		}, 
 	).json()
 
 
-@bp.route("/oauth/refresh", methods=['POST'])
-def oauth_refresh():
+def refresh(refresh_token):
 	return requests.post(
-		url="https://kauth.kakao.com/oauth/token", 
+		url=AUTH_SERVER % "/oauth/token", 
 		headers={
 			"Content-Type": "application/x-www-form-urlencoded",
 			"Cache-Control": "no-cache",
@@ -35,19 +33,17 @@ def oauth_refresh():
 			"grant_type": "refresh_token",
 			"client_id": CLIENT_ID,
 			"client_secret": CLIENT_SECRET,
-			"refresh_token": request.get_json()['refresh_token'],
+			"refresh_token": refresh_token,
 		}, 
 	).json()
 
-
-@bp.route("/oauth/userinfo")
-def get_userinfo():
+def get_userinfo(bearer_token):
 	return requests.post(
-		url="https://kapi.kakao.com/v2/user/me", 
+		url=API_SERVER % "/v2/user/me", 
 		headers={
 			"Content-Type": "application/x-www-form-urlencoded",
 			"Cache-Control": "no-cache",
-			"Authorization": request.headers['Authorization']
+			"Authorization": bearer_token
 		},
 		data={
 			#"property_keys":'["kakao_account.profile_image_url"]'
