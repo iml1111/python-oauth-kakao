@@ -4,7 +4,7 @@ Flask Kakao OAuth Application Sample
 from flask import Flask, render_template, request, jsonify, make_response
 from flask_jwt_extended import (
     JWTManager, create_access_token, 
-    jwt_optional, get_jwt_identity, jwt_required,
+    get_jwt_identity, jwt_required,
     set_access_cookies, set_refresh_cookies, 
     unset_jwt_cookies, create_refresh_token,
     jwt_refresh_token_required,
@@ -55,6 +55,7 @@ def oauth_api():
     resp = make_response(render_template('index.html'))
     access_token = create_access_token(identity=user.id)
     refresh_token = create_refresh_token(identity=user.id)
+    resp.set_cookie("logined", "true")
     set_access_cookies(resp, access_token)
     set_refresh_cookies(resp, refresh_token)
 
@@ -81,6 +82,7 @@ def token_remove_api():
     """
     resp = jsonify({'result': True})
     unset_jwt_cookies(resp)
+    resp.delete_cookie('logined')
     return resp
 
 
