@@ -43,6 +43,7 @@ body {
   width: 100%;
   max-width: 500px;
   min-height: 420px;
+  box-sizing: border-box;
   padding: 40px 0;
   background-color: #1a1a1c;
   box-shadow: 0 8px 16px rgba(0,0,0,.16);
