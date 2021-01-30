@@ -42,10 +42,20 @@ body {
   align-items: center;
   width: 100%;
   max-width: 500px;
+  min-height: 420px;
   padding: 40px 0;
   background-color: #1a1a1c;
-  box-shadow: 0 8px 16px rgba(0,0,0,0,.16);
+  box-shadow: 0 8px 16px rgba(0,0,0,.16);
   color: hsla(0,0%,100%,.9);
+  transition: 1s ease;
+}
+
+@media screen and (max-width: 500px) {
+  .Wrapper {
+    min-height: 100vh;
+    padding-top: 60px;
+    box-sizing: border-box;
+  }
 }
 
 .kakao_button {

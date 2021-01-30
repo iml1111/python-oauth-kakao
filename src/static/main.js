@@ -5,7 +5,7 @@ const init = () => {
 	document.querySelector("#kakao").addEventListener('click', onKakao);
 	document.querySelector("#logout").addEventListener('click', onLogout);
 	
-	// 자동 로그인 실행z
+	// 자동 로그인 실행
 	autoLogin();
 
 	// 해당 함수는 Router 대신 실행하는 함수입니다.
@@ -28,15 +28,18 @@ const onKakao = async () => {
 	})
 	.then(res => res.json())
 	.then(res => res['kakao_oauth_url']);
-	
+
 	const newWindow = openWindowPopup(url, "카카오톡 로그인");
-	
+
 	const checkConnect = setInterval(function() {
 		if (!newWindow || !newWindow.closed) return;
 		clearInterval(checkConnect);
-		// [TODO] 단순히 끄는 것이 아닌, 진짜 로그인되었는지 확인 후에, Reload 시킬지, 가만히 있을지 결정
-		window.location.reload();
-		document.querySelector("#loading").classList.add('display_none');
+		
+		if(getCookie('logined') === 'true') {
+			window.location.reload();
+		} else {
+			document.querySelector("#loading").classList.add('display_none');
+		}
 	}, 1000);
 }
 
@@ -93,11 +96,19 @@ const refreshToken = async () => {
 	})
 	.then(res => res.json());
 	if (data.result) {
-		console.log("Access Token 갱신하였습니다.");
+		console.log("Access Token 갱신");
 		autoLogin();
 	} else {
 		if (data.msg === `Token has expired`) {
 			console.log("Refresh Token 만료");
+
+			document.querySelector('#kakao').classList.remove('display_none');
+			document.querySelector('#logout').classList.add('display_none');
+			document.querySelector("#nickname").classList.add('display_none');
+			document.querySelector("#thumnail").classList.add('display_none');
+	
+			onKakao();
+			return;
 		}
 
 		fetch("/token/remove", {
@@ -128,6 +139,18 @@ const onLogout = async () => {
 	} else {
 		console.log("로그아웃 실패");
 	}
+}
+
+const getCookie = (cookieName) => {
+	let cookieValue=null;
+	if(document.cookie){
+		let array=document.cookie.split((escape(cookieName)+'='));
+		if(array.length >= 2){
+			let arraySub=array[1].split(';');
+			cookieValue=unescape(arraySub[0]);
+		}
+	}
+	return cookieValue;
 }
 
 init();
