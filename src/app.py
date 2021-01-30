@@ -1,7 +1,7 @@
 """
-Flask Kakao Oauth Application Sample
+Flask Kakao OAuth Application Sample
 """
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, make_response
 from flask_jwt_extended import (
     JWTManager, create_access_token, 
     jwt_optional, get_jwt_identity, jwt_required,
@@ -19,36 +19,20 @@ app.config['JWT_SECRET_KEY'] = "I'M IML."
 app.config['JWT_TOKEN_LOCATION'] = ['cookies']
 app.config['JWT_COOKIE_SECURE'] = False
 app.config['JWT_COOKIE_CSRF_PROTECT'] = True
-app.config['JWT_ACCESS_TOKEN_EXPIRES'] = 60
-app.config['JWT_REFRESH_TOKEN_EXPIRES'] = 60 * 10
+app.config['JWT_ACCESS_TOKEN_EXPIRES'] = 10
+app.config['JWT_REFRESH_TOKEN_EXPIRES'] = 30
 jwt = JWTManager(app)
 
 
 @app.route("/")
-@jwt_optional
 def index():
-    user_id = get_jwt_identity()
-
-    if user_id:
-        user = UserModel().get_user(user_id)
-        print(user)
-        return render_template(
-            'logined.html',
-            nickname=user.nickname,
-            thumbnail=user.thumbnail
-        )
-    else:
-        return render_template(
-            'index.html', 
-            client_id=CLIENT_ID, 
-            redirect_uri=REDIRECT_URI
-        )
+    return render_template('index.html')
 
 
 @app.route("/oauth")
 def oauth_api():
     """
-    # Oauth API [GET]
+    # OAuth API [GET]
     사용자로부터 authorization code를 인자로 받은 후,
     아래의 과정 수행함
     1. 전달받은 authorization code를 통해서
@@ -68,20 +52,23 @@ def oauth_api():
     user = UserData(user)
     UserModel().upsert_user(user)
 
-    resp = jsonify(
-        result=True, 
-        kakao_oauth_result=auth_info
-    )
+    print(f'"access_token": "{auth_info["access_token"]}"')
+
+    resp = make_response(render_template('index.html'))
     access_token = create_access_token(identity=user.id)
     refresh_token = create_refresh_token(identity=user.id)
     set_access_cookies(resp, access_token)
     set_refresh_cookies(resp, refresh_token)
+
     return resp
 
 
 @app.route('/token/refresh')
 @jwt_refresh_token_required
 def token_refresh_api():
+    """
+    Refresh Token을 이용한 Access Token 재발급
+    """
     user_id = get_jwt_identity()
     resp = jsonify({'result': True})
     access_token = create_access_token(identity=user_id)
@@ -91,6 +78,9 @@ def token_refresh_api():
 
 @app.route('/token/remove')
 def token_remove_api():
+    """
+    Cookie에 등록된 Token 제거
+    """
     resp = jsonify({'result': True})
     unset_jwt_cookies(resp)
     return resp
@@ -99,6 +89,9 @@ def token_remove_api():
 @app.route("/userinfo")
 @jwt_required
 def userinfo():
+    """
+    Access Token을 이용한 DB에 저장된 사용자 정보 가져오기
+    """
     user_id = get_jwt_identity()
     userinfo = UserModel().get_user(user_id).serialize()
     return jsonify(userinfo)
@@ -106,6 +99,9 @@ def userinfo():
 
 @app.route('/oauth/url')
 def oauth_url_api():
+    """
+    Kakao OAuth URL 가져오기
+    """
     return jsonify(
         kakao_oauth_url="https://kauth.kakao.com/oauth/authorize?client_id=%s&redirect_uri=%s&response_type=code" \
         % (CLIENT_ID, REDIRECT_URI)
@@ -115,7 +111,7 @@ def oauth_url_api():
 @app.route("/oauth/refresh", methods=['POST'])
 def oauth_refesh_api():
     """
-    # Oauth Refresh API
+    # OAuth Refresh API
     refresh token을 인자로 받은 후,
     kakao에서 access_token 및 refresh_token을 재발급.
     (% refresh token의 경우, 
@@ -129,7 +125,7 @@ def oauth_refesh_api():
 @app.route("/oauth/userinfo", methods=['POST'])
 def oauth_userinfo_api():
     """
-    # Oauth Userinfo API
+    # OAuth Userinfo API
     kakao access token을 인자로 받은 후,
     kakao에서 해당 유저의 실제 Userinfo를 가져옴
     """
