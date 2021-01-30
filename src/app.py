@@ -19,8 +19,8 @@ app.config['JWT_SECRET_KEY'] = "I'M IML."
 app.config['JWT_TOKEN_LOCATION'] = ['cookies']
 app.config['JWT_COOKIE_SECURE'] = False
 app.config['JWT_COOKIE_CSRF_PROTECT'] = True
-app.config['JWT_ACCESS_TOKEN_EXPIRES'] = 5
-app.config['JWT_REFRESH_TOKEN_EXPIRES'] = 10
+app.config['JWT_ACCESS_TOKEN_EXPIRES'] = 30
+app.config['JWT_REFRESH_TOKEN_EXPIRES'] = 100
 jwt = JWTManager(app)
 
 
