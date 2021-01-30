@@ -43,14 +43,6 @@ def index():
         )
 
 
-@app.route('/oauth/url')
-def oauth_url_api():
-    return jsonify(
-        kakao_oauth_url="https://kauth.kakao.com/oauth/authorize?client_id=%s&redirect_uri=%s&response_type=code" \
-        % (CLIENT_ID, REDIRECT_URI)
-    )
-
-
 @app.route("/oauth")
 def oauth_api():
     """
@@ -104,6 +96,14 @@ def userinfo():
     user_id = get_jwt_identity()
     userinfo = UserModel().get_user(user_id).serialize()
     return jsonify(userinfo)
+
+
+@app.route('/oauth/url')
+def oauth_url_api():
+    return jsonify(
+        kakao_oauth_url="https://kauth.kakao.com/oauth/authorize?client_id=%s&redirect_uri=%s&response_type=code" \
+        % (CLIENT_ID, REDIRECT_URI)
+    )
 
 
 @app.route("/oauth/refresh", methods=['POST'])
