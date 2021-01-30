@@ -7,6 +7,7 @@ from flask_jwt_extended import (
     jwt_optional, get_jwt_identity, jwt_required,
     set_access_cookies, set_refresh_cookies, 
     unset_jwt_cookies, create_refresh_token,
+    jwt_refresh_token_required,
 )
 from config import CLIENT_ID, REDIRECT_URI
 from controller import Oauth
@@ -27,9 +28,10 @@ jwt = JWTManager(app)
 @jwt_optional
 def index():
     user_id = get_jwt_identity()
-    
+
     if user_id:
         user = UserModel().get_user(user_id)
+        print(user)
         return render_template(
             'logined.html',
             nickname=user.nickname,
@@ -66,7 +68,10 @@ def oauth_api():
     user = UserData(user)
     UserModel().upsert_user(user)
 
-    resp = jsonify({'result': True})
+    resp = jsonify(
+        result=True, 
+        kakao_oauth_result=auth_info
+    )
     access_token = create_access_token(identity=user.id)
     refresh_token = create_refresh_token(identity=user.id)
     set_access_cookies(resp, access_token)
@@ -75,6 +80,7 @@ def oauth_api():
 
 
 @app.route('/token/refresh')
+@jwt_refresh_token_required
 def token_refresh_api():
     user_id = get_jwt_identity()
     resp = jsonify({'result': True})
