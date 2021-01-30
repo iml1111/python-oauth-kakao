@@ -1,10 +1,12 @@
 """
 Flask Kakao Oauth Application Sample
 """
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, jsonify
 from flask_jwt_extended import (
     JWTManager, create_access_token, 
-    jwt_optional, get_jwt_identity, jwt_required
+    jwt_optional, get_jwt_identity, jwt_required,
+    set_access_cookies, set_refresh_cookies, 
+    unset_jwt_cookies, create_refresh_token,
 )
 from config import CLIENT_ID, REDIRECT_URI
 from controller import Oauth
@@ -12,19 +14,18 @@ from model import UserModel, UserData
 
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = "I'M IML."
+app.config['JWT_SECRET_KEY'] = "I'M IML."
+app.config['JWT_TOKEN_LOCATION'] = ['cookies']
+app.config['JWT_COOKIE_SECURE'] = False
+app.config['JWT_COOKIE_CSRF_PROTECT'] = True
+app.config['JWT_ACCESS_TOKEN_EXPIRES'] = 60
+app.config['JWT_REFRESH_TOKEN_EXPIRES'] = 60 * 10
 jwt = JWTManager(app)
 
 
 @app.route("/")
 @jwt_optional
 def index():
-    """
-    # Index API [GET]
-    1. Authorization Header(Bearer Token)이 유효할 경우,
-        프로필을 명시하는 logined.html 반환
-    2. 아닐경우, 비회원으로 판단하여 기본 index.html 반환
-    """
     user_id = get_jwt_identity()
     
     if user_id:
@@ -42,15 +43,12 @@ def index():
         )
 
 
-@app.route("/userinfo")
-@jwt_required
-def userinfo():
-    """
-    # UserInfo API [GET]
-    Authorization Header가 유효할 경우,
-    서비스 자체 DB에 저장된 UserInfo 반환
-    """
-    return UserModel().get_user(get_jwt_identity()).serialize()
+@app.route('/oauth/url')
+def oauth_url_api():
+    return jsonify(
+        kakao_oauth_url="https://kauth.kakao.com/oauth/authorize?client_id=%s&redirect_uri=%s&response_type=code" \
+        % (CLIENT_ID, REDIRECT_URI)
+    )
 
 
 @app.route("/oauth")
@@ -75,13 +73,37 @@ def oauth_api():
     
     user = UserData(user)
     UserModel().upsert_user(user)
-    
-    return {
-        'service_access_token': create_access_token(
-            identity=user.id, expires_delta=False
-        ),
-        "kakao_oauth_result": auth_info,
-    }
+
+    resp = jsonify({'result': True})
+    access_token = create_access_token(identity=user.id)
+    refresh_token = create_refresh_token(identity=user.id)
+    set_access_cookies(resp, access_token)
+    set_refresh_cookies(resp, refresh_token)
+    return resp
+
+
+@app.route('/token/refresh')
+def token_refresh_api():
+    user_id = get_jwt_identity()
+    resp = jsonify({'result': True})
+    access_token = create_access_token(identity=user_id)
+    set_access_cookies(resp, access_token)
+    return resp
+
+
+@app.route('/token/remove')
+def token_remove_api():
+    resp = jsonify({'result': True})
+    unset_jwt_cookies(resp)
+    return resp
+
+
+@app.route("/userinfo")
+@jwt_required
+def userinfo():
+    user_id = get_jwt_identity()
+    userinfo = UserModel().get_user(user_id).serialize()
+    return jsonify(userinfo)
 
 
 @app.route("/oauth/refresh", methods=['POST'])
@@ -94,7 +116,8 @@ def oauth_refesh_api():
     유효기간이 1달 이상일 경우 결과에서 제외됨)
     """
     refresh_token = request.get_json()['refresh_token']
-    return Oauth().refresh(refresh_token)
+    result = Oauth().refresh(refresh_token)
+    return jsonify(result)
 
 
 @app.route("/oauth/userinfo", methods=['POST'])
@@ -105,7 +128,8 @@ def oauth_userinfo_api():
     kakao에서 해당 유저의 실제 Userinfo를 가져옴
     """
     access_token = request.get_json()['access_token']
-    return Oauth().userinfo("Bearer " + access_token)
+    result = Oauth().userinfo("Bearer " + access_token)
+    return jsonify(result)
 
 
 if __name__ == '__main__':
