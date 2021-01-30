@@ -52,8 +52,6 @@ def oauth_api():
     user = UserData(user)
     UserModel().upsert_user(user)
 
-    print(f'"access_token": "{auth_info["access_token"]}"')
-
     resp = make_response(render_template('index.html'))
     access_token = create_access_token(identity=user.id)
     refresh_token = create_refresh_token(identity=user.id)
