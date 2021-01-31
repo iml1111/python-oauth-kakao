@@ -41,7 +41,6 @@ def oauth_api():
     3. 해당 식별 정보를 서비스 DB에 저장 (회원가입)
     3-1. 만약 이미 있을 경우, (3) 과정 스킵
     4. 사용자 식별 id를 바탕으로 서비스 전용 access_token 생성
-    5. kako oauth 결과 및 (4)의 service access token 반환
     """
     code = str(request.args.get('code'))
     

@@ -1,10 +1,9 @@
 # python-Oauth-kakao
 Python을 이용한 Kakao Oauth 연동 로그인 예제입니다.
 
-테스트한 프레임워크는 Flask이지만 Flask에 종속된 기능을 전혀 사용하지 않았기 때문에 
+테스트한 프레임워크는 Flask이지만 Flask에 종속된 기능을 전혀 사용하지 않았기 때문에 타 프레임워크에서도 사용하실 수 있습니다.
 
-타 프레임워크에서도 사용하실 수 있습니다.
-
+해당 코드에 대한 자세한 설명은 [여기](https://blog.naver.com/shino1025/222226561870)를 참고해주세요.
 
 
 # Dependency
